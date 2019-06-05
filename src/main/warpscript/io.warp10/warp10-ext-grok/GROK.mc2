@@ -1,0 +1,65 @@
+//
+//   Copyright 2019  SenX S.A.S.
+//
+//   Licensed under the Apache License, Version 2.0 (the "License");
+//   you may not use this file except in compliance with the License.
+//   You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+//   Unless required by applicable law or agreed to in writing, software
+//   distributed under the License is distributed on an "AS IS" BASIS,
+//   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//   See the License for the specific language governing permissions and
+//   limitations under the License.
+//
+
+{
+  'name' 'GROK'
+  'since' '2.1.0'
+  'deprecated' ''
+  'deleted' ''
+  'version' 'all'
+  'tags' [ 'extension' ]
+  'ext' 'io.warp10.script.ext.grok.GrokWarpScriptExtension'
+  'desc' 
+    <'
+The `GROK` function compiles [Grok](https://www.elastic.co/guide/en/logstash/current/plugins-filters-grok.html) patterns. A compiled pattern can then be used by `GROKMATCH` to extract elements from an input STRING.
+    '>
+  'sig' [ 
+    [ [ 'pattern:STRING' ] [ 'compiled:GROK' ] ]
+    [ [ 'pattern:STRING' 'context:MAP' ] REVERSE [ 'compiled:GROK' ] ]
+    [ [ 'patterns:LIST<STRING>' ] [ 'lcompiled:LIST<GROK>' ] ]
+    [ [ 'patterns:LIST<STRING>' 'context:MAP' ] REVERSE [ 'lcompiled:LIST<GROK>' ] ]
+  ]
+  'params' {
+    'pattern' 'Grok pattern to compile.'
+    'patterns' 'List of Grok patterns to compile.'
+    'compiled' 'Compiled Grok pattern. Suitable for use with `GROKMATCH`.'
+    'lcompiled' 'List of compiled Grok patterns. Each one suitable for use with `GROKMATCH`.'
+    'context' 'Map of name to Grok pattern. Those patterns will be compiled prior to compiling `pattern` or `patterns`. If `context` is missing, is the empty map, or contains a `NULL` key, a set of [default patterns](https://raw.githubusercontent.com/thekrakken/java-grok/master/src/main/resources/patterns/patterns) will be registered prior to compiling `pattern` or `patterns`.'
+  }
+  'related' [ 'GROKMATCH' ]
+  'examples' [ 
+    <'
+'%25{DATA}'
+GROK
+
+'%25{DATA}'
+{}
+GROK
+
+'%25{DATA}'
+{ NULL NULL }
+GROK
+    '>
+  ]
+  'conf' [ ]
+} '.info' STORE
+<%
+  !$.info INFO
+  <% 'GROK' EVAL %> <% %> <% %> TRY
+%>
+'macro' STORE
+// Unit tests
+$macro
