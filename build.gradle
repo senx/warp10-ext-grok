@@ -15,15 +15,19 @@
 //
 
 plugins {
-  id 'java'
-  id 'com.github.johnrengelman.shadow' version '4.0.3'
-  id 'eclipse'
-  id 'idea'
-  id 'signing'
-  id 'maven-publish'
-  id 'com.jfrog.bintray' version '1.8.1'
+    id 'com.github.johnrengelman.shadow' version '7.0.0'
+    id 'net.nemerosa.versioning' version '2.14.0'
+    id 'io.codearte.nexus-staging' version '0.22.0'
+    id 'antlr'
+    id 'java'
+    id 'java-library'
+    id 'idea'
+    id 'eclipse'
+    id 'maven-publish'
+    id 'signing'
 }
 
+<<<<<<< HEAD
 // ------------------------------------------------------------------
 //                    AUTO RELEASE MANAGEMENT
 // Gets the version name from the latest Git tag
@@ -76,25 +80,23 @@ version project.ext.version
 wrapper {
   distributionType = Wrapper.DistributionType.ALL
 }
+=======
+project.group = 'io.warp10'
+project.description = 'Grok WarpScript™ Extension'
+>>>>>>> 609ba9bac530efa2f71697d46b84dd4ac9e54a0a
 
+// If the current tag is set, then it's a new release. Don't add build number
+project.version = versioning.info.lastTag + ((versioning.info.tag != null) ? '' : '-' + versioning.info.build)
 //
 // Repositories for the project dependencies
 //
 
 repositories {
-  jcenter()
-  
-  maven {
-    url 'https://dl.bintray.com/senx/maven'
-  }
-
-  maven {
-    url 'https://dl.bintray.com/hbs/maven'
-  }
+    mavenCentral()
 }
 
 configurations {
-  provided
+    provided
 }
 
 //
@@ -103,15 +105,14 @@ configurations {
 //
 
 dependencies {
-  provided 'io.warp10:warpscript:+'
+  compileOnly group: 'io.warp10', name: 'warpscript', version: '+'
 
   //
   // Insert your dependencies here
   //
-  //compile group: 'GROUP', name: 'NAME', version: 'VERSION'
-  compile "io.krakens:java-grok:0.1.9"
+  implementation "io.krakens:java-grok:0.1.9"
 
-  testCompile'io.warp10:warpscript:+'
+  testImplementation 'io.warp10:warpscript:+'
   testImplementation 'junit:junit:4.12'
 }
 
@@ -134,39 +135,59 @@ idea {
   }
 }
 
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
+
 jar {
-  from('src/main/warpscript') {
-   //
-   // Only consider macros which are in our namespace
-   //
-   include 'io.warp10/warp10-ext-grok/*.mc2'
-   include 'io.warp10/warp10-ext-grok/**/*.mc2'
-  }
-  from('.') {
-    include 'README.md'
-  }
+    manifest {
+        attributes('WarpFleet-Description': project.description)
+        attributes('WarpFleet-Group': project.group)
+        attributes('WarpFleet-Artifact': project.name)
+        attributes('WarpFleet-Version': project.version)
+    }
+
+    from('src/main/warpscript') {
+        //
+        // Only consider macros which are in our namespace
+        //
+        include project.group + '/' + project.name + '/*.mc2'
+        include project.group + '/' + project.name + '/**/*.mc2'
+    }
+
+    from('.') {
+        include 'README.md'
+        include project.group + '-' + project.name + '.conf'
+    }
 }
 
 shadowJar {
-  classifier = ''
+    classifier = ''
 
-  manifest {
-   attributes('WarpFleet-Description': 'Grok WarpScript™ Extension')
-   attributes('WarpFleet-Group': project.ext.group)
-   attributes('WarpFleet-Artifact': project.ext.name)
-   attributes('WarpFleet-Version': project.ext.version)
-  }
+    manifest {
+        attributes('WarpFleet-Description': project.description)
+        attributes('WarpFleet-Group': project.group)
+        attributes('WarpFleet-Artifact': project.name)
+        attributes('WarpFleet-Version': project.version)
+    }
 
-  from('src/main/warpscript') {
-   //
-   // Only consider macros which are in our namespace
-   //
-   include 'io.warp10/warp10-ext-grok/*.mc2'
-   include 'io.warp10/warp10-ext-grok/**/*.mc2'
-  }
-  from('.') {
-    include 'README.md'
-  }
+    from('src/main/warpscript') {
+        //
+        // Only consider macros which are in our namespace
+        //
+        include project.group + '/' + project.name + '/*.mc2'
+        include project.group + '/' + project.name + '/**/*.mc2'
+    }
+
+    from('.') {
+        include 'README.md'
+        include project.group + '-' + project.name + '.conf'
+    }
+
+    dependencies {
+        exclude(dependency('org.slf4j::'))
+    }
 }
 
 shadowJar.dependsOn(test)
@@ -174,94 +195,119 @@ shadowJar.dependsOn(test)
 //
 // Maven related config
 //
-
-// Task for building the sources jar
-task sourcesJar(type: Jar) {
-  classifier = 'sources'
-  from sourceSets.main.allJava
-}
-
-javadoc {
-  source = sourceSets.main.allJava
-  classpath = configurations.compile
-}
-
-task javadocJar(type: Jar) {
-  classifier = 'javadoc'
-}
-
-javadocJar.dependsOn(javadoc)
-
 publishing {
-  publications {
-    //
-    // Publication for the standard jar
-    //
+    publications {
+        maven(MavenPublication) {
+            groupId project.group
+            artifactId project.name
+            version = project.version
+            from components.java
+            pom {
+                name = project.name
+                description = project.description
+                url = 'https://github.com/senx/' + project.name
 
-    stdjar(MavenPublication) {
-      groupId project.ext.group
-      artifactId project.ext.name
-      version project.ext.version
+                scm {
+                    connection = 'scm:git:git://github.com/senx/' + project.name
+                    developerConnection = 'scm:git:ssh://github.com/senx/' + project.name
+                    url = 'https://github.com/senx/' + project.name
+                }
 
-      // We publish the result of the 'jar' task and the sources jar
-      from components.java 
-      artifact sourcesJar
-      artifact javadocJar
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id = 'senx'
+                        name = 'SenX'
+                        email = 'contact@senx.io'
+                    }
+                }
+            }
+        }
+        uberJar(MavenPublication) {
+            groupId project.group
+            artifactId project.name
+            artifact(shadowJar)
+            artifact(tasks['javadocJar'])
+            artifact(tasks['sourcesJar'])
+            version = project.version + '-uberjar'
+
+            pom {
+                name = project.name
+                description = project.description
+                url = 'https://github.com/senx/' + project.name
+
+                scm {
+                    connection = 'scm:git:git://github.com/senx/' + project.name
+                    developerConnection = 'scm:git:ssh://github.com/senx/' + project.name
+                    url = 'https://github.com/senx/' + project.name
+                }
+
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id = 'senx'
+                        name = 'SenX'
+                        email = 'contact@senx.io'
+                    }
+                }
+            }
+        }
     }
 
-    //
-    // Publication for the über jar containing all dependencies
-    //
-
-    uberjar(MavenPublication) {
-      groupId project.ext.group
-      artifactId project.ext.name
-      version project.ext.version
-
-      // Publish the über jar and the sources
-      artifact sourcesJar
-      artifact shadowJar
+    repositories {
+        if (project.hasProperty('ossrhUsername')) {
+            maven {
+                url 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+                credentials {
+                    username ossrhUsername
+                    password ossrhPassword
+                }
+            }
+        }
+        if (project.hasProperty('nexusUsername')) {
+            maven {
+                name 'nexus'
+                allowInsecureProtocol true
+                url "$nexusHost/repository/maven-releases/"
+                credentials {
+                    username nexusUsername
+                    password nexusPassword
+                }
+            }
+        }
     }
-  }
 }
 
-bintray {
-  dryRun = false
-
-  user = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('BINTRAY_USER')
-  key = project.hasProperty('bintrayApiKey') ? project.property('bintrayApiKey') : System.getenv('BINTRAY_API_KEY')
-
-  publications = project.ext.uberjar ? [ 'uberjar' ] : ['stdjar' ]
-  publish = null != System.getProperty('publish')
-
-  pkg {
-
-    repo = project.ext.bintrayRepo
-    name = project.ext.name
-
-    if (project.hasProperty('bintrayUserOrg') || null != System.getenv('BINTRAY_USERORG')) {
-      userOrg = project.hasProperty('bintrayUserOrg') ? project.property('bintrayUserOrg') : System.getenv('BINTRAY_USERORG')
-    }
-
-    vcsUrl = project.ext.bintrayVcsUrl
-    licenses = project.ext.bintrayLicenses
-
-    version {
-      version = version
-      released = new Date()
-    }
-  }
+artifacts {
+    archives shadowJar, javadocJar, sourcesJar
 }
 
+if (project.hasProperty('ossrhUsername')) {
+    nexusStaging {
+        packageGroup = 'io.warp10'
+        username ossrhUsername
+        password ossrhPassword
+    }
+}
 
 //
 // Artifact Signing
 //
-
-signing {
-  if (null == System.getProperty("nosign")) {
-    useGpgCmd()
-    sign publishing.publications.uberjar
-    sign publishing.publications.stdjar
-  }
+if (project.hasProperty('signing.gnupg.keyName')) {
+    signing {
+        useGpgCmd()
+        sign publishing.publications
+    }
 }
